@@ -1,0 +1,74 @@
+-- Create the Bank database
+CREATE DATABASE Bank;
+USE Bank;
+
+-- Create tables with primary and foreign key constraints
+CREATE TABLE Deposit (
+    actno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    adate DATE
+);
+
+CREATE TABLE Branch (
+    bname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+CREATE TABLE Customers (
+    cname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+CREATE TABLE Borrow (
+    loanno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    FOREIGN KEY (cname) REFERENCES Customers(cname),
+    FOREIGN KEY (bname) REFERENCES Branch(bname)
+);
+-- Sample data for Deposit table
+INSERT INTO Deposit (actno, cname, bname, amount, adate) VALUES
+(101, 'Ravi', 'Nagpur', 1200, '1996-12-01'),
+(102, 'Sunil', 'Mumbai', 3000, '1997-01-15'),
+(103, 'Anil', 'Nagpur', 4000, '1997-03-12');
+
+-- Sample data for Branch table
+INSERT INTO Branch (bname, city) VALUES
+('Nagpur', 'Nagpur'),
+('Mumbai', 'Mumbai');
+
+-- Sample data for Customers table
+INSERT INTO Customers (cname, city) VALUES
+('Ravi', 'Nagpur'),
+('Sunil', 'Mumbai'),
+('Anil', 'Nagpur');
+
+-- Sample data for Borrow table
+INSERT INTO Borrow (loanno, cname, bname, amount) VALUES
+(201, 'Ravi', 'Nagpur', 5000),
+(202, 'Sunil', 'Mumbai', 7000);
+SELECT cname FROM Customers 
+WHERE city = 'Bombay' 
+AND cname IN (SELECT cname FROM Deposit WHERE bname = 'Nagpur');
+SELECT cname FROM Customers c
+JOIN Deposit d ON c.cname = d.cname
+JOIN Branch b ON d.bname = b.bname
+WHERE c.city = b.city;
+SELECT DISTINCT d.cname 
+FROM Deposit d 
+JOIN Borrow b ON d.cname = b.cname 
+JOIN Branch br ON d.bname = br.bname 
+WHERE d.bname = 'Nagpur' AND br.city = 'Nagpur';
+SELECT DISTINCT b.cname 
+FROM Borrow b 
+JOIN Deposit d ON b.cname = d.cname 
+WHERE d.amount > 1000 AND b.amount > 2000;
+SELECT cname 
+FROM Customers 
+WHERE city = (SELECT city FROM Branch WHERE bname = 
+              (SELECT bname FROM Deposit WHERE cname = 'Sunil'));
+CREATE INDEX idx_amount ON Deposit(amount);
+
