@@ -1,0 +1,19 @@
+{
+  "zipcode": "10001",
+  "city": "New York",
+  "state": "New York",
+  "population": 210000
+}
+mongoimport --db your_database_name --collection zip --file zip.json --jsonArray
+var mapPopulation = function() {
+  emit(this.state, this.population);
+};
+var reducePopulation = function(key, values) {
+  return Array.sum(values);  // Sums the populations of the same state
+};
+db.zip.mapReduce(
+  mapPopulation,
+  reducePopulation,
+  { out: "state_population" }
+);
+

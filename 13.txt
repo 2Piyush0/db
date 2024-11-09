@@ -1,0 +1,105 @@
+-- Create the Bookstore database
+CREATE DATABASE Bookstore;
+USE Bookstore;
+
+-- Create tables with primary and foreign key constraints
+CREATE TABLE Publisher (
+    PID INT PRIMARY KEY,
+    PNAME VARCHAR(50),
+    ADDRESS VARCHAR(100),
+    STATE VARCHAR(50),
+    PHONE VARCHAR(15),
+    EMAILID VARCHAR(50)
+);
+
+CREATE TABLE Book (
+    ISBN INT PRIMARY KEY,
+    BOOK_TITLE VARCHAR(100),
+    CATEGORY VARCHAR(50),
+    PRICE DECIMAL(10, 2),
+    COPYRIGHT_DATE DATE,
+    YEAR INT,
+    PAGE_COUNT INT,
+    PID INT,
+    FOREIGN KEY (PID) REFERENCES Publisher(PID)
+);
+
+CREATE TABLE Author (
+    AID INT PRIMARY KEY,
+    ANAME VARCHAR(50),
+    STATE VARCHAR(50),
+    CITY VARCHAR(50),
+    ZIP VARCHAR(10),
+    PHONE VARCHAR(15),
+    URL VARCHAR(100)
+);
+
+CREATE TABLE Author_Book (
+    AID INT,
+    ISBN INT,
+    FOREIGN KEY (AID) REFERENCES Author(AID),
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+
+CREATE TABLE Review (
+    RID INT PRIMARY KEY,
+    ISBN INT,
+    RATING INT,
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+-- Sample data for Publisher table
+INSERT INTO Publisher (PID, PNAME, ADDRESS, STATE, PHONE, EMAILID) VALUES
+(1, 'MEHTA', '123 Maple St', 'Maharashtra', '1234567890', 'mehta@publishing.com');
+
+-- Sample data for Book table
+INSERT INTO Book (ISBN, BOOK_TITLE, CATEGORY, PRICE, COPYRIGHT_DATE, YEAR, PAGE_COUNT, PID) VALUES
+(1001, 'Learning SQL', 'Education', 500, '2015-01-01', 2015, 300, 1),
+(1002, 'Data Science Essentials', 'Education', 750, '2018-05-01', 2018, 250, 1);
+
+-- Sample data for Author table
+INSERT INTO Author (AID, ANAME, STATE, CITY, ZIP, PHONE, URL) VALUES
+(1, 'CHETAN BHAGAT', 'Maharashtra', 'Mumbai', '400001', '0987654321', 'http://chetanbhagat.com'),
+(2, 'J.K. Rowling', 'England', 'London', 'W1', '0123456789', 'http://jkrowling.com');
+
+-- Sample data for Author_Book table
+INSERT INTO Author_Book (AID, ISBN) VALUES
+(1, 1001),
+(2, 1002);
+
+-- Sample data for Review table
+INSERT INTO Review (RID, ISBN, RATING) VALUES
+(1, 1001, 4),
+(2, 1002, 5);
+SELECT CITY, PHONE, URL FROM Author WHERE ANAME = 'CHETAN BHAGAT';
+SELECT BOOK_TITLE, RID, RATING FROM Book 
+JOIN Review ON Book.ISBN = Review.ISBN;
+SELECT BOOK_TITLE, PRICE, ANAME, URL 
+FROM Book 
+JOIN Publisher ON Book.PID = Publisher.PID
+JOIN Author_Book ON Book.ISBN = Author_Book.ISBN
+JOIN Author ON Author_Book.AID = Author.AID
+WHERE PNAME = 'MEHTA';
+UPDATE Publisher SET PHONE = '123456' WHERE PNAME = 'MEHTA';
+SELECT PNAME, AVG(PRICE) AS AvgPrice, MAX(PRICE) AS MaxPrice, MIN(PRICE) AS MinPrice
+FROM Publisher
+JOIN Book ON Publisher.PID = Book.PID
+GROUP BY PNAME;
+DELETE FROM Book WHERE PAGE_COUNT < 100;
+SELECT * FROM Author WHERE CITY = 'Pune' AND ANAME LIKE 'C%';
+SELECT * FROM Author WHERE CITY = 
+    (SELECT CITY FROM Author WHERE ANAME = 'Korth');
+DELIMITER //
+CREATE PROCEDURE UpdatePageCount(IN book_isbn INT, IN new_page_count INT)
+BEGIN
+    UPDATE Book SET PAGE_COUNT = new_page_count WHERE ISBN = book_isbn;
+END //
+DELIMITER ;
+DELIMITER //
+CREATE FUNCTION GetBookPrice(book_isbn INT) RETURNS DECIMAL(10,2)
+BEGIN
+    DECLARE book_price DECIMAL(10,2);
+    SELECT PRICE INTO book_price FROM Book WHERE ISBN = book_isbn;
+    RETURN book_price;
+END //
+DELIMITER ;
+

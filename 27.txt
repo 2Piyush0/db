@@ -1,0 +1,27 @@
+use library;  // Create and switch to the 'library' database
+
+// Create 'books' collection and insert some sample data
+db.books.insertMany([
+  { title: "Book A", author: "Author 1", pages: 150 },
+  { title: "Book B", author: "Author 2", pages: 200 },
+  { title: "Book C", author: "Author 3", pages: 300 },
+  { title: "Book D", author: "Author 4", pages: 400 },
+  { title: "Book E", author: "Author 5", pages: 100 }
+]);
+var mapFunction = function() {
+  if (this.pages < 250) {
+    emit("small", 1);  // Emit "small" for books with less than 250 pages
+  } else {
+    emit("big", 1);  // Emit "big" for books with 250 or more pages
+  }
+};
+var reduceFunction = function(key, values) {
+  return Array.sum(values);  // Sum the counts for each category (small or big)
+};
+db.books.mapReduce(
+  mapFunction,  // The map function
+  reduceFunction,  // The reduce function
+  { out: "book_sizes" }  // Output the result to a new collection called 'book_sizes'
+);
+db.book_sizes.find();
+

@@ -1,0 +1,58 @@
+-- Create Database
+CREATE DATABASE IF NOT EXISTS company_management;
+USE company_management;
+
+-- Create account table
+CREATE TABLE account (
+    account_no INT PRIMARY KEY,
+    last_transaction DATE,
+    status VARCHAR(10) -- 'Active' or 'Inactive'
+);
+
+-- Create RollCall tables
+CREATE TABLE N_RollCall (
+    roll_no INT PRIMARY KEY,
+    student_name VARCHAR(50)
+);
+
+CREATE TABLE O_RollCall (
+    roll_no INT PRIMARY KEY,
+    student_name VARCHAR(50)
+);
+
+-- Create Employee and Department Salary tables
+CREATE TABLE EMP (
+    e_no INT PRIMARY KEY,
+    d_no INT,
+    salary DECIMAL(10,2)
+);
+
+CREATE TABLE dept_salary (
+    d_no INT PRIMARY KEY,
+    avg_salary DECIMAL(10,2)
+);
+-- Update status to 'Active' for accounts inactive for over a year
+UPDATE account
+SET status = 'Active'
+WHERE status = 'Inactive' AND last_transaction < CURDATE() - INTERVAL 365 DAY;
+
+-- Get the number of rows updated
+SELECT ROW_COUNT() AS rows_updated;
+-- Insert new entries from N_RollCall to O_RollCall if not already present
+INSERT INTO O_RollCall (roll_no, student_name)
+SELECT n.roll_no, n.student_name
+FROM N_RollCall n
+LEFT JOIN O_RollCall o ON n.roll_no = o.roll_no
+WHERE o.roll_no IS NULL;
+
+-- Output the number of rows inserted
+SELECT ROW_COUNT() AS rows_inserted;
+-- Insert average salary for each department into dept_salary
+INSERT INTO dept_salary (d_no, avg_salary)
+SELECT e.d_no, AVG(e.salary)
+FROM EMP e
+GROUP BY e.d_no;
+
+-- Output the number of rows inserted
+SELECT ROW_COUNT() AS rows_inserted;
+

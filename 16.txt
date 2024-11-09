@@ -1,0 +1,97 @@
+CREATE TABLE account (
+    account_no NUMBER PRIMARY KEY,
+    last_transaction DATE,
+    status VARCHAR2(10) -- 'Active' or 'Inactive'
+);
+DECLARE
+    v_rows_updated NUMBER;
+BEGIN
+    -- Update status to 'Active' for accounts inactive for over a year
+    UPDATE account
+    SET status = 'Active'
+    WHERE status = 'Inactive' AND last_transaction < SYSDATE - 365;
+
+    v_rows_updated := SQL%ROWCOUNT;
+
+    IF v_rows_updated > 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Activated ' || v_rows_updated || ' accounts.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No accounts were activated.');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred.');
+END;
+CREATE TABLE employee (
+    emp_no NUMBER PRIMARY KEY,
+    salary NUMBER
+);
+
+CREATE TABLE increment_salary (
+    emp_no NUMBER,
+    old_salary NUMBER,
+    new_salary NUMBER
+);
+DECLARE
+    v_avg_salary NUMBER;
+BEGIN
+    -- Get the average salary of all employees
+    SELECT AVG(salary) INTO v_avg_salary FROM employee;
+
+    -- Update salaries below the average
+    FOR emp IN (SELECT emp_no, salary FROM employee WHERE salary < v_avg_salary) LOOP
+        -- Insert record into increment_salary table
+        INSERT INTO increment_salary (emp_no, old_salary, new_salary)
+        VALUES (emp.emp_no, emp.salary, emp.salary * 1.10);
+
+        -- Update the employee's salary
+        UPDATE employee SET salary = emp.salary * 1.10 WHERE emp_no = emp.emp_no;
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('Salaries updated for employees below average.');
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred.');
+END;
+CREATE TABLE stud21 (
+    roll NUMBER PRIMARY KEY,
+    att NUMBER, -- Attendance percentage
+    status VARCHAR2(1) -- 'D' for Detained, 'ND' for Not Detained
+);
+
+CREATE TABLE D_Stud (
+    roll NUMBER,
+    att NUMBER,
+    detained_date DATE
+);
+DECLARE
+    CURSOR c_students IS
+        SELECT roll, att FROM stud21 WHERE att < 75;
+    v_roll stud21.roll%TYPE;
+    v_att stud21.att%TYPE;
+BEGIN
+    OPEN c_students;
+
+    LOOP
+        FETCH c_students INTO v_roll, v_att;
+        EXIT WHEN c_students%NOTFOUND;
+
+        -- Insert record into D_Stud table
+        INSERT INTO D_Stud (roll, att, detained_date)
+        VALUES (v_roll, v_att, SYSDATE);
+
+        -- Update student status to Detained
+        UPDATE stud21 SET status = 'D' WHERE roll = v_roll;
+
+        DBMS_OUTPUT.PUT_LINE('Student ' || v_roll || ' marked as detained.');
+    END LOOP;
+
+    CLOSE c_students;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred.');
+END;
+

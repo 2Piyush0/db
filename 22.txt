@@ -1,0 +1,44 @@
+// Switch to (or create) the DYPIT database
+use DYPIT;
+
+// Create Teachers collection and insert sample data
+db.Teachers.insertMany([
+    { Tname: "Praveen", dno: 1, dname: "Computer", experience: 5, salary: 12000, date_of_joining: new Date("2018-01-15") },
+    { Tname: "Anjali", dno: 2, dname: "IT", experience: 3, salary: 11000, date_of_joining: new Date("2019-03-20") },
+    { Tname: "Rajesh", dno: 3, dname: "E&TC", experience: 10, salary: 25000, date_of_joining: new Date("2013-05-12") }
+]);
+
+// Create Students collection and insert sample data
+db.Students.insertMany([
+    { Sname: "Amit", roll_no: 1, class: "FY" },
+    { Sname: "Neha", roll_no: 2, class: "SY" },
+    { Sname: "Rohit", roll_no: 3, class: "TY" }
+]);
+db.Teachers.aggregate([
+    { $group: { _id: "$dname", avg_salary: { $avg: "$salary" } } }
+]);
+db.Teachers.aggregate([
+    { $group: { _id: "$dname", employee_count: { $sum: 1 } } }
+]);
+db.Teachers.aggregate([
+    { $group: { _id: "$dname", total_salary: { $sum: "$salary" } } },
+    { $match: { total_salary: { $gte: 50000 } } }
+]);
+db.Teachers.aggregate([
+    {
+        $group: {
+            _id: "$dname",
+            max_salary: { $max: "$salary" },
+            min_salary: { $min: "$salary" },
+            avg_experience: { $avg: "$experience" }
+        }
+    }
+]);
+db.Teachers.createIndex({ Tname: 1 }, { unique: true });
+db.Teachers.createIndex({ dname: 1, experience: -1 });
+db.getCollectionNames().forEach(function(collection) {
+    print("Indexes for " + collection + ":");
+    printjson(db[collection].getIndexes());
+});
+db.Teachers.getIndexes();
+

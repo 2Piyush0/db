@@ -1,0 +1,26 @@
+db.createCollection("games");
+db.games.insertMany([
+  { name: "Game A", gametype: "RPG", rating: 85, achievements: [] },
+  { name: "Game B", gametype: "Action", rating: 90, achievements: [] },
+  { name: "Game C", gametype: "Strategy", rating: 75, achievements: [] },
+  { name: "Game D", gametype: "Shooter", rating: 92, achievements: [] },
+  { name: "Game E", gametype: "Adventure", rating: 88, achievements: [] }
+]);
+db.games.find({});
+db.games.find({})
+   .sort({ rating: -1 })
+   .limit(3);
+db.games.updateOne(
+   { name: "Game B" },
+   { $set: { achievements: ["Game Master", "Speed Demon"] } }
+);
+
+db.games.updateOne(
+   { name: "Game D" },
+   { $set: { achievements: ["Game Master", "Speed Demon"] } }
+);
+db.games.find({
+   achievements: { $all: ["Game Master", "Speed Demon"] }
+});
+db.games.find({ achievements: { $exists: true, $not: { $size: 0 } } });
+

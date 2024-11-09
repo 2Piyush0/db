@@ -1,0 +1,78 @@
+-- Create the database
+CREATE DATABASE IF NOT EXISTS school;
+USE school;
+
+-- Create the Stud table
+CREATE TABLE IF NOT EXISTS Stud (
+    Roll INT PRIMARY KEY,
+    Att DECIMAL(5, 2),
+    Status CHAR(2)
+);
+
+-- Insert sample data into Stud table
+INSERT INTO Stud (Roll, Att, Status) VALUES
+(101, 60, NULL),
+(102, 80, NULL);
+
+-- Create the account_master table
+CREATE TABLE IF NOT EXISTS account_master (
+    account_no INT PRIMARY KEY,
+    balance DECIMAL(10, 2)
+);
+
+-- Insert sample data into account_master table
+INSERT INTO account_master (account_no, balance) VALUES
+(1, 5000),
+(2, 2000);
+
+-- Create stored procedure for updating student attendance status
+DELIMITER $$
+
+CREATE PROCEDURE update_attendance_status(IN v_roll INT)
+BEGIN
+    DECLARE v_attendance DECIMAL(5,2);
+
+    -- Fetch the attendance of the student
+    SELECT Att INTO v_attendance FROM Stud WHERE Roll = v_roll;
+
+    -- Check the attendance and update status
+    IF v_attendance < 75 THEN
+        UPDATE Stud SET Status = 'D' WHERE Roll = v_roll;
+        SELECT 'Term not granted' AS Message;
+    ELSE
+        UPDATE Stud SET Status = 'ND' WHERE Roll = v_roll;
+        SELECT 'Term granted' AS Message;
+    END IF;
+    
+END $$
+
+DELIMITER ;
+
+-- Call the procedure for student roll number 101
+CALL update_attendance_status(101);
+
+-- Create stored procedure for handling withdrawal
+DELIMITER $$
+
+CREATE PROCEDURE handle_withdrawal(IN v_account_no INT, IN v_withdrawal DECIMAL(10, 2))
+BEGIN
+    DECLARE v_balance DECIMAL(10, 2);
+
+    -- Fetch current balance
+    SELECT balance INTO v_balance FROM account_master WHERE account_no = v_account_no;
+
+    -- Check if withdrawal exceeds balance
+    IF v_withdrawal > v_balance THEN
+        SELECT 'Insufficient balance for withdrawal.' AS Message;
+    ELSE
+        -- Update balance after withdrawal
+        UPDATE account_master SET balance = balance - v_withdrawal WHERE account_no = v_account_no;
+        SELECT CONCAT('Withdrawal successful. New balance: ', balance - v_withdrawal) AS Message;
+    END IF;
+END $$
+
+DELIMITER ;
+
+-- Call the procedure to handle withdrawal (example: account_no = 1, withdrawal = 6000)
+CALL handle_withdrawal(1, 6000);
+

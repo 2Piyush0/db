@@ -1,0 +1,56 @@
+[
+    {
+        "city": "ABBEYVILLE",
+        "state": "KS",
+        "population": 1600,
+        "location": [38.5, -97.5]
+    },
+    {
+        "city": "ADA",
+        "state": "OK",
+        "population": 5000,
+        "location": [34.8, -96.7]
+    },
+    {
+        "city": "TIMKEN",
+        "state": "KS",
+        "population": 1100,
+        "location": [38.4, -97.3]
+    },
+    {
+        "city": "WICHITA",
+        "state": "KS",
+        "population": 3800,
+        "location": [37.7, -97.3]
+    },
+    {
+        "city": "TULSA",
+        "state": "OK",
+        "population": 6000,
+        "location": [36.1, -95.9]
+    }
+]
+# Create the zip.json file (contents provided above) and save it.
+# Import the zip.json file into MongoDB
+mongoimport --db DYPIT --collection zips --file zip.json --jsonArray
+// Select the database
+use DYPIT
+
+// Create a single-field index on state
+db.zips.createIndex({ state: 1 });
+
+// Create a composite index on state and city
+db.zips.createIndex({ state: 1, city: 1 });
+
+// Create a multi-key index on location
+db.zips.createIndex({ location: 1 });
+
+// Test query performance for population > 1600
+db.zips.find({ population: { $gt: 1600 } }).explain("executionStats");
+
+// Test query performance for state "KS"
+db.zips.find({ state: "KS" }).explain("executionStats");
+
+// Test query performance for city "TIMKEN" and location
+db.zips.find({ city: "TIMKEN" }, { location: 1 }).explain("executionStats");
+

@@ -1,0 +1,65 @@
+// Switch to (or create) the DYPIT database
+use DYPIT;
+
+// Create Teachers collection and insert sample data
+db.Teachers.insertMany([
+    { Tname: "Praveen", dno: 1, dname: "Computer", experience: 5, salary: 12000, date_of_joining: new Date("2018-01-15") },
+    { Tname: "Anjali", dno: 2, dname: "IT", experience: 3, salary: 11000, date_of_joining: new Date("2019-03-20") },
+    { Tname: "Rajesh", dno: 3, dname: "E&TC", experience: 10, salary: 15000, date_of_joining: new Date("2013-05-12") }
+]);
+
+// Create Students collection and insert sample data
+db.Students.insertMany([
+    { Sname: "Amit", roll_no: 1, class: "FY" },
+    { Sname: "Neha", roll_no: 2, class: "SY" },
+    { Sname: "Rohit", roll_no: 3, class: "TY" }
+]);
+
+db.Teachers.find().pretty();
+
+db.Teachers.find({ dname: "Computer" }).pretty();
+
+db.Teachers.find({ dname: { $in: ["Computer", "IT", "E&TC"] } }).pretty();
+
+db.Teachers.find({
+    dname: { $in: ["Computer", "IT", "E&TC"] },
+    salary: { $gte: 10000 }
+}).pretty();
+
+db.Students.find({
+    $or: [{ roll_no: 2 }, { Sname: "xyz" }]
+}).pretty();
+
+db.Teachers.updateOne(
+    { Tname: "Praveen" },
+    { $set: { experience: 10 } },
+    { upsert: true }
+);
+
+db.Teachers.updateMany(
+    { dname: "IT" },
+    { $set: { dname: "COMP" } }
+);
+
+db.Teachers.find({}, { Tname: 1, experience: 1, _id: 0 });
+
+db.Department.save({
+    dno: 4,
+    dname: "Mechanical",
+    location: "Building A"
+});
+
+db.Teachers.save({
+    _id: db.Teachers.findOne({ Tname: "Rajesh" })._id,
+    Tname: "Rajesh",
+    dno: 2,
+    dname: "IT",
+    experience: 10,
+    salary: 15000,
+    date_of_joining: new Date("2013-05-12")
+});
+
+db.Teachers.deleteMany({ dname: "IT" });
+
+db.Teachers.find().sort({ Tname: 1 }).limit(3).pretty();
+

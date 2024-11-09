@@ -1,0 +1,92 @@
+-- Create Database
+CREATE DATABASE library_management;
+USE library_management;
+
+-- Create tables
+CREATE TABLE client_master (
+    client_id INT PRIMARY KEY,
+    client_name VARCHAR(50),
+    bal_due DECIMAL(10, 2)
+);
+
+CREATE TABLE Borrow (
+    Roll_no INT,
+    Name VARCHAR(50),
+    DateofIssue DATE,
+    NameofBook VARCHAR(100),
+    Status CHAR(1)  -- 'I' for issued, 'R' for returned
+);
+
+CREATE TABLE Fine (
+    Roll_no INT,
+    Date DATE,
+    Amt DECIMAL(10, 2)
+);
+
+-- Sample Data
+INSERT INTO client_master (client_id, client_name, bal_due) VALUES
+(1, 'John Doe', 500),
+(2, 'Jane Smith', -100);  -- This entry violates the business rule
+
+INSERT INTO Borrow (Roll_no, Name, DateofIssue, NameofBook, Status) VALUES
+(101, 'Alice', '2023-10-01', 'Database Systems', 'I'),
+(102, 'Bob', '2023-10-15', 'Networks', 'I');
+
+-- Stored Procedure to Check Balance and Fine Calculation
+DELIMITER $$
+
+CREATE PROCEDURE CheckAndApplyFine(IN v_client_id INT, IN v_roll_no INT, IN v_nameofbook VARCHAR(100))
+BEGIN
+    -- Variables to store fetched data
+    DECLARE v_bal_due DECIMAL(10, 2);
+    DECLARE v_dateofissue DATE;
+    DECLARE v_days_due INT;
+    DECLARE v_fine_amt DECIMAL(10, 2);
+    
+    -- Check balance due for client
+    SELECT bal_due INTO v_bal_due
+    FROM client_master
+    WHERE client_id = v_client_id;
+
+    -- If balance is negative, print error message
+    IF v_bal_due < 0 THEN
+        SELECT 'Error: Balance due is negative, which violates business rules.' AS Message;
+    ELSE
+        SELECT 'Balance is within the acceptable range.' AS Message;
+    END IF;
+    
+    -- Fetch the date of issue for the given roll_no and book name
+    SELECT DateofIssue INTO v_dateofissue
+    FROM Borrow
+    WHERE Roll_no = v_roll_no AND NameofBook = v_nameofbook AND Status = 'I';
+
+    -- Calculate the number of days overdue
+    SET v_days_due = DATEDIFF(CURRENT_DATE, v_dateofissue);
+
+    -- Calculate fine based on overdue days
+    IF v_days_due > 30 THEN
+        SET v_fine_amt = 50 * v_days_due;  -- Rs. 50 per day if more than 30 days
+    ELSEIF v_days_due BETWEEN 15 AND 30 THEN
+        SET v_fine_amt = 5 * v_days_due;   -- Rs. 5 per day if 15-30 days
+    ELSE
+        SET v_fine_amt = 0;                 -- No fine for less than 15 days
+    END IF;
+
+    -- Update book status to 'Returned' and log fine if applicable
+    UPDATE Borrow SET Status = 'R' WHERE Roll_no = v_roll_no AND NameofBook = v_nameofbook;
+
+    IF v_fine_amt > 0 THEN
+        INSERT INTO Fine (Roll_no, Date, Amt) VALUES (v_roll_no, CURRENT_DATE, v_fine_amt);
+        SELECT CONCAT('Fine of Rs. ', v_fine_amt, ' imposed.') AS Message;
+    ELSE
+        SELECT 'No fine imposed.' AS Message;
+    END IF;
+END $$
+
+DELIMITER ;
+
+-- Example of Calling the Stored Procedure
+
+-- Call the procedure with client_id=2, roll_no=101, and book name 'Database Systems'
+CALL CheckAndApplyFine(2, 101, 'Database Systems');
+

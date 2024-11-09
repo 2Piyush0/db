@@ -1,0 +1,88 @@
+-- Create the database and use it
+CREATE DATABASE company_management;
+USE company_management;
+
+-- Create clientmstr table
+CREATE TABLE clientmstr (
+    client_id INT PRIMARY KEY,
+    client_name VARCHAR(50),
+    bal_due DECIMAL(10,2)
+);
+
+-- Create audit_trade table
+CREATE TABLE audit_trade (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type VARCHAR(10), -- 'UPDATE' or 'DELETE'
+    client_id INT,
+    old_client_name VARCHAR(50),
+    old_bal_due DECIMAL(10,2),
+    action_date DATE
+);
+
+-- Create Emp table
+CREATE TABLE Emp (
+    e_no INT PRIMARY KEY,
+    e_name VARCHAR(50),
+    salary DECIMAL(10,2)
+);
+
+-- Create Tracking table
+CREATE TABLE Tracking (
+    tracking_id INT AUTO_INCREMENT PRIMARY KEY,
+    e_no INT,
+    attempted_salary DECIMAL(10,2),
+    action_date DATE
+);
+
+-- Trigger to audit DELETE on clientmstr table
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_delete
+AFTER DELETE ON clientmstr
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_trade (action_type, client_id, old_client_name, old_bal_due, action_date)
+    VALUES ('DELETE', OLD.client_id, OLD.client_name, OLD.bal_due, CURDATE());
+END $$
+
+-- Trigger to audit UPDATE on clientmstr table
+CREATE TRIGGER trg_audit_update
+AFTER UPDATE ON clientmstr
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_trade (action_type, client_id, old_client_name, old_bal_due, action_date)
+    VALUES ('UPDATE', OLD.client_id, OLD.client_name, OLD.bal_due, CURDATE());
+END $$
+
+-- Trigger to check salary before insert or update on Emp table
+CREATE TRIGGER trg_salary_check_before_insert
+BEFORE INSERT ON Emp
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < 50000 THEN
+        -- Log the attempt in the Tracking table
+        INSERT INTO Tracking (e_no, attempted_salary, action_date)
+        VALUES (NEW.e_no, NEW.salary, CURDATE());
+
+        -- Raise an exception to prevent insertion
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Salary cannot be less than Rs. 50,000.';
+    END IF;
+END $$
+
+-- Trigger to check salary before update on Emp table
+CREATE TRIGGER trg_salary_check_before_update
+BEFORE UPDATE ON Emp
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < 50000 THEN
+        -- Log the attempt in the Tracking table
+        INSERT INTO Tracking (e_no, attempted_salary, action_date)
+        VALUES (NEW.e_no, NEW.salary, CURDATE());
+
+        -- Raise an exception to prevent update
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Salary cannot be less than Rs. 50,000.';
+    END IF;
+END $$
+
+DELIMITER ;
+

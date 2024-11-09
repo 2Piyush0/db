@@ -1,0 +1,37 @@
+use mydb;
+db.users.insertOne({
+  "id": 0,
+  "name": "Leanne Flinn",
+  "email": "leanne.flinn@unilogic.com",
+  "work": "Unilogic",
+  "age": 27,
+  "gender": "Male",
+  "Salary": 16660,
+  "hobbies": "Acrobatics,Photography,Papier-Mache"
+});
+var mapGender = function() {
+  emit(this.gender, 1);
+};
+var reduceGender = function(key, values) {
+  return Array.sum(values);  // Sums up all the counts for each gender
+};
+db.users.mapReduce(
+  mapGender,
+  reduceGender,
+  { out: "gender_count" }
+);
+var mapHobbies = function() {
+  var hobbiesList = this.hobbies.split(",");
+  for (var i = 0; i < hobbiesList.length; i++) {
+    emit(hobbiesList[i].trim(), 1);  // Emits each hobby as the key, and 1 as the value
+  }
+};
+var reduceHobbies = function(key, values) {
+  return Array.sum(values);  // Sums up the count for each hobby
+};
+db.users.mapReduce(
+  mapHobbies,
+  reduceHobbies,
+  { out: "hobby_count" }
+);
+
